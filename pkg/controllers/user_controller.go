@@ -3,10 +3,22 @@ package controllers
 import (
 	"github.com/chicken-afk/go-fiber/database"
 	"github.com/chicken-afk/go-fiber/pkg/models"
+	"github.com/chicken-afk/go-fiber/pkg/request"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"log"
 	"strconv"
 )
+
+type ErrorResponse struct {
+	FailedField string
+	Tag         string
+	Value       interface{}
+}
+
+type XValidator struct {
+	validator *validator.Validate
+}
 
 type Paginate struct {
 	CurrentPage int         `json:"current_page"`
@@ -80,9 +92,55 @@ func (r *UserController) Index(c *fiber.Ctx) error {
 }
 
 func (r *UserController) Create(c *fiber.Ctx) error {
+	user := new(request.UserCreateRequest)
+
+	if err := c.BodyParser(user); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "failed",
+			"message": "Validation error",
+			"error":   err.Error(),
+		})
+	}
+
+	//Validation
+	validate := validator.New()
+	errs := validate.Struct(user)
+
+	if errs != nil {
+		validationErrors := []ErrorResponse{}
+		for _, err := range errs.(validator.ValidationErrors) {
+			var elem ErrorResponse
+			elem.FailedField = err.Field() // Export struct field name
+			elem.Tag = err.Tag()           // Export struct tag
+			elem.Value = err.Value()       // Export field value
+			validationErrors = append(validationErrors, elem)
+		}
+
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "failed",
+			"message": "Validation error",
+			"error":   validationErrors,
+		})
+	}
+
+	newUser := models.User{
+		Name:    user.Name,
+		Phone:   user.Phone,
+		Email:   user.Email,
+		Address: user.Address,
+	}
+
+	err := database.DB.Create(&newUser).Error
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "failed",
+			"message": err,
+		})
+	}
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Berhasil membuat user",
+		"data":    newUser,
 	})
 }
