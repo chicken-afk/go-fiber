@@ -10,6 +10,8 @@ func RouteInit(route *fiber.App) {
 	UserController := controllers.NewUserController()
 	route.Get("/user", UserController.Index)
 	route.Post("/user", UserController.Create)
+	route.Get("/user/:id", UserController.Detail)
+	route.Put("user/:id", UserController.Update)
 
 	BookController := controllers.NewBookController()
 	route.Get("/book", BookController.Index)
