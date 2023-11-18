@@ -6,13 +6,17 @@ import (
 )
 
 func RouteInit(route *fiber.App) {
+	//Prefix
+	api := route.Group("/api")
+	v1 := api.Group("/v1")
 	// Routes
 	UserController := controllers.NewUserController()
-	route.Get("/user", UserController.Index)
-	route.Post("/user", UserController.Create)
-	route.Get("/user/:id", UserController.Detail)
-	route.Put("user/:id", UserController.Update)
+	v1.Get("/user", UserController.Index)
+	v1.Post("/user", UserController.Create)
+	v1.Get("/user/:id", UserController.Detail)
+	v1.Put("user/:id", UserController.Update)
+	v1.Delete("user/:id", UserController.DeleteUser)
 
 	BookController := controllers.NewBookController()
-	route.Get("/book", BookController.Index)
+	v1.Get("/book", BookController.Index)
 }
