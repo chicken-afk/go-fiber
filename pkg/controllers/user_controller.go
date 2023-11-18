@@ -232,5 +232,29 @@ func (r *UserController) Update(c *fiber.Ctx) error {
 		"message": "Updated data succesfully",
 		"data":    user,
 	})
+}
+
+func (r *UserController) DeleteUser(c *fiber.Ctx) error {
+	var user models.User
+
+	err := database.DB.Where("id", c.Params("id")).First(&user).Error
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(Response{
+			Status:  "failed",
+			Message: "record not found",
+			Data:    err.Error(),
+		})
+	}
+	if errDelete := database.DB.Delete(&user).Error; errDelete != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(Response{
+			Status:  "failed",
+			Message: "Internal Server Error",
+			Data:    errDelete,
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(Response{
+		Status:  "success",
+		Message: "Data deleted succesfully",
+	})
 
 }
