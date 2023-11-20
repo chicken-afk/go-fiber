@@ -5,8 +5,12 @@ import (
 	"github.com/chicken-afk/go-fiber/pkg/models"
 	"github.com/chicken-afk/go-fiber/pkg/request"
 	"github.com/chicken-afk/go-fiber/pkg/response"
+	"github.com/chicken-afk/go-fiber/pkg/utils"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
+	"log"
+	"time"
 )
 
 func (r *AuthController) Login(c *fiber.Ctx) error {
@@ -44,10 +48,35 @@ func (r *AuthController) Login(c *fiber.Ctx) error {
 		})
 	}
 	//Check Password
+	isValid := utils.CheckPasswordHash(LoginRequest.Password, user.Password)
+
+	if !isValid {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"status":  "failed",
+			"message": "wrong password",
+		})
+	}
+
+	//Generate JWT
+	claims := jwt.MapClaims{}
+	claims["id"] = user.ID
+	claims["name"] = user.Name
+	claims["email"] = user.Email
+	claims["exp"] = time.Now().Add(time.Minute * 2).Unix()
+
+	token, err := utils.GenerateToken(&claims)
+	if err != nil {
+		log.Println(err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "failed",
+			"message": "Internal server error",
+			"error":   err,
+		})
+	}
 
 	output := response.LoginResponse{
 		TokenType: "Bearer",
-		Token:     "FKJLKJdkneoieoufieo",
+		Token:     token,
 		User:      user,
 	}
 
