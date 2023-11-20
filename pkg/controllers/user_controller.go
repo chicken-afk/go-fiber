@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/chicken-afk/go-fiber/database"
 	"github.com/chicken-afk/go-fiber/pkg/models"
 	"github.com/chicken-afk/go-fiber/pkg/request"
 	"github.com/chicken-afk/go-fiber/pkg/response"
+	"github.com/chicken-afk/go-fiber/pkg/utils"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"log"
@@ -53,7 +55,6 @@ func (r *UserController) Index(c *fiber.Ctx) error {
 	offset := (page - 1) * limit
 
 	search := c.Query("search", "")
-
 	if search != "" {
 		database.DB.Model(&models.User{}).Where("name LIKE ?", "%"+search+"%").Count(&totalData)
 		err = database.DB.Offset(offset).Limit(limit).Where("name LIKE ?", "%"+search+"%").Find(&users).Error
@@ -92,13 +93,7 @@ func (r *UserController) Index(c *fiber.Ctx) error {
 func (r *UserController) Create(c *fiber.Ctx) error {
 	user := new(request.UserCreateRequest)
 
-	if err := c.BodyParser(user); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "failed",
-			"message": "Validation error",
-			"error":   err.Error(),
-		})
-	}
+	c.BodyParser(user)
 
 	//Validation
 	validate := validator.New()
@@ -121,14 +116,43 @@ func (r *UserController) Create(c *fiber.Ctx) error {
 		})
 	}
 
-	newUser := models.User{
-		Name:    user.Name,
-		Phone:   user.Phone,
-		Email:   user.Email,
-		Address: user.Address,
+	//Check Email unique
+	var userCount int64
+	query := database.DB.Model(&models.User{}).Where("email = ?", user.Email)
+
+	if err := query.Count(&userCount).Error; err != nil {
+		// Handle the error
+		fmt.Println("Error counting users:", err)
+		return c.JSON(fiber.Map{
+			"status":  "failed",
+			"message": "an error occurred",
+		})
 	}
 
-	err := database.DB.Create(&newUser).Error
+	if userCount > 0 {
+		return c.JSON(fiber.Map{
+			"status":  "failed",
+			"message": "email already exist",
+		})
+	}
+	hashedPassword, err := utils.HashingPassword(user.Password)
+	if err != nil {
+		log.Println("error hashing password ")
+		log.Println(err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "failed",
+			"message": "internal server error",
+		})
+	}
+	newUser := models.User{
+		Name:     user.Name,
+		Phone:    user.Phone,
+		Email:    user.Email,
+		Address:  user.Address,
+		Password: hashedPassword,
+	}
+
+	err = database.DB.Create(&newUser).Error
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "failed",

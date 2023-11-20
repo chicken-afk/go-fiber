@@ -25,3 +25,12 @@ func NewBookController() *BookController {
 		//Inject services
 	}
 }
+
+type AuthController struct {
+}
+
+func NewAuthController() *AuthController {
+	return &AuthController{
+		//Inject Services
+	}
+}
