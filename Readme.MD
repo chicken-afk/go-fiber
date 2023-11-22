@@ -11,6 +11,7 @@ The goal of this project is to provide the backend for application X by offering
 - API endpoints for handling CRUD operations on User.
 - Connection to the MySQL database using GORM.
 - Middleware
+- Login User using JWT Token
 - Modular project structure for easy development and maintenance.
 
 ## Installation
