@@ -18,10 +18,10 @@ func RouteInit(route *fiber.App) {
 	// Routes
 	UserController := controllers.NewUserController()
 	v1.Get("/user", middleware.AuthMiddleware, UserController.Index)
-	v1.Post("/user", UserController.Create)
-	v1.Get("/user/:id", UserController.Detail)
-	v1.Put("user/:id", UserController.Update)
-	v1.Delete("user/:id", UserController.DeleteUser)
+	v1.Post("/user", middleware.AuthMiddleware, UserController.Create)
+	v1.Get("/user/:id", middleware.AuthMiddleware, UserController.Detail)
+	v1.Put("user/:id", middleware.AuthMiddleware, UserController.Update)
+	v1.Delete("user/:id", middleware.AuthMiddleware, UserController.DeleteUser)
 
 	BookController := controllers.NewBookController()
 	v1.Get("/book", BookController.Index)

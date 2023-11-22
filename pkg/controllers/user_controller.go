@@ -9,6 +9,7 @@ import (
 	"github.com/chicken-afk/go-fiber/pkg/utils"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"log"
 	"strconv"
 )
@@ -145,6 +146,7 @@ func (r *UserController) Create(c *fiber.Ctx) error {
 		})
 	}
 	newUser := models.User{
+		Uuid:     uuid.New(),
 		Name:     user.Name,
 		Phone:    user.Phone,
 		Email:    user.Email,

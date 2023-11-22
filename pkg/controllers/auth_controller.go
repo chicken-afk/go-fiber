@@ -41,7 +41,7 @@ func (r *AuthController) Login(c *fiber.Ctx) error {
 	}
 
 	//Check Email
-	if err := database.DB.Debug().Where("email", LoginRequest.Email).First(&user).Error; err != nil {
+	if err := database.DB.Where("email", LoginRequest.Email).First(&user).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"status":  "failed",
 			"message": "email not found",
@@ -62,7 +62,7 @@ func (r *AuthController) Login(c *fiber.Ctx) error {
 	claims["id"] = user.ID
 	claims["name"] = user.Name
 	claims["email"] = user.Email
-	claims["exp"] = time.Now().Add(time.Minute * 2).Unix()
+	claims["exp"] = time.Now().Add(time.Minute * 360).Unix()
 
 	token, err := utils.GenerateToken(&claims)
 	if err != nil {
